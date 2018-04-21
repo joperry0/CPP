@@ -117,6 +117,7 @@ class Graph {
     // helper functions - prints the entire graph
     void print_graph();
     bool has_cycle();
+    bool cycle_util(int, map<int, bool> &, map<int, bool> &);
     bool reachable(int,int);
     void DFS(int);
     void BFS(int);
@@ -246,35 +247,32 @@ void Graph::BFS(int id){
 // determines if the graph has a cycle
 // outputs true if cycle, false if otherwise
 bool Graph::has_cycle(){
-  stack<Node*> st;
+  map<int, bool> recurse;
   map<int, bool> visited;
   Node *node;
 
-  // iterate through all nodes to test for a cycle
-  // not all nodes may be reachable
-  for(map<int, Node*>::iterator mt=nodes.begin(); mt!=nodes.end(); ++mt){
-    node = nodes[mt->second->id];
-
-    st.push(node);
-
-    while(!st.empty()){
-      node = st.top();
-      st.pop();
-
-      if(visited.count(node->id) == 0){
-        visited[node->id] = true;
-        for(map<int, Edge*>::reverse_iterator et=node->out.rbegin(); et!=node->out.rend(); ++et){
-          st.push(nodes[et->first]);
-        }
-      } else {
+  for(map<int,Node*>::iterator it=nodes.begin(); it!=nodes.end(); ++it)
+    if(visited.count(it->first) == 0)
+      if(cycle_util(it->first, visited, recurse))
         return true;
-      }
-    }
-    visited.clear();
-  }
+
   return false;
 }
 
+bool Graph::cycle_util(int nid, map<int, bool> &visited, map<int, bool> &recurse){
+  visited[nid] = true;
+  recurse[nid] = true;
+
+  for(map<int,Edge*>::iterator it=nodes[nid]->out.begin(); it!=nodes[nid]->out.end(); ++it){
+    if(visited.count(it->first) == 0)
+      if(cycle_util(it->first, visited, recurse))
+        return true;
+      else if(recurse[it->first])
+        return true;
+  }
+  recurse[nid] = false;
+  return false;
+}
 // determines if the node with id2 can be reached from the node with id1
 // outputs true if a path exists, false if otherwise
 bool Graph::reachable(int id1, int id2){
